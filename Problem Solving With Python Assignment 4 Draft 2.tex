@@ -1,0 +1,250 @@
+\documentclass[11pt]{article}
+
+%####### DON'T CHANGE MARGIN SETTINGS ###########
+\newcommand{\keywordfont}{\textsc}
+\newcommand{\keyword}[1]{%
+  \marginpar{\raggedright\small\keywordfont{#1}}}
+\reversemarginpar
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, outer=2cm, inner=3.3cm, marginparwidth=72pt, heightrounded]{geometry}
+%#################################
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{microtype}
+
+\newtheorem{claim}{Claim}
+\newtheorem{conjecture}{Conjecture}
+
+
+
+\begin{document}
+
+\Large
+\begin{center}
+\textbf{MA3K7-A1 Assignment $4$}\\
+Andy Moston (5650294)
+\end{center}
+\normalsize
+
+\section*{Entry}
+
+%I know
+%What I want
+%Notation
+
+\begin{itemize}
+
+\item I will set myself, Player A, as \keyword{Notation} the player that plays $0$s and Player B as the player that plays $1$s.
+
+
+\item I will represent a matrix as $A=(a_{ij})_{n\times n}$, where $a_{ij}\in \{ 0,1 \}$ is the entry in row $i$, column $j$.
+
+\end{itemize}
+
+\begin{itemize}
+
+\item The game is over once all of the cells of the matrix have been filled.
+
+\item Unless stated \keyword{I Know} otherwise I will be investigating the assignment with Player A moving first (to be placing $0$s) and Player B moving second (to be placing $1$s), where they continue to alternate turns until the game is over.
+
+\item Players can place their assigned number in any currently empty position in the matrix (i.e no replacing an opponent's previously placed number with your own.)
+
+\item Player A, playing $0$s, wins when the resulting matrix has determinant 0, and loses otherwise.
+
+\item As per the assignment and the definition of a determinant, the game will only be played on a square $n \times n$ matrix.
+
+
+\end{itemize}
+
+
+\begin{itemize}
+
+\item To investigate whether \keyword{What I Want} there are strategies assuming optimal play that ensure I can force a win for any size $n \times n$ matrix.
+
+\item If/How those strategies differ between different values of $n$ and how changing some of the assumptions not derived from the assignment changes these strategies. 
+
+\end{itemize}
+
+\section*{Attack}
+
+There are $n^2$ cells in an $n\times n$ matrix. Therefore, if $n$ is even, both players make the same number of moves, whereas if $n$ is odd, Player A makes one more move.
+
+I will initially specialise \keyword{Simplify} to small values of $n$, where I can investigate the possible outcomes more easily, before using Python to explore larger cases.
+
+\subsection*{Small cases}
+
+For $n=1$, the result is immediate. Since Player A moves first, and with only one cell to fill, the only entry is $0$, giving
+
+$$
+A=(0), \; \; \; \; \; \;  \det(A)=0.
+$$
+
+therefore, Player A wins. If Player B moved first instead, the matrix would be $(1)$, with determinant $1$ resulting in Player B winning. The winner in this case is determined entirely by who moves first (and, of course, there is no room for strategy to be explored)
+
+For $n=2$, consider
+
+
+$$
+A=\begin{pmatrix}a&b\\c&d\end{pmatrix},
+\; \; \; \; \; \;  \det(A)=ad-bc.
+$$
+
+
+Since two entries will be $0$ and two will be $1$, $\det(A) = 0$ iff:
+
+$$
+ad=bc=0.
+$$
+
+Let's investigate the case where I place my first $0$ in $a$: This immediately makes $ad=0$, regardless of which player place their value in $d$. Whatever position Player B chooses next, at least one of $b$ or $c$ will be unoccupied. I can then place my second zero in either $b$ or $c$ so that $bc=0$ as well. With both $ad, bc =0$, the determinant must therefore be zero. its clear to see the same argument works if I initially choose any of the other three positions as opposed to $a$.
+
+I also briefly considered the case where Player B moves first. If they place a one in any position, I can place a zero in the diagonally opposite position. This makes one of the products zero, and the remaining two cells must contain one $0$ and one $1$, making the other product zero too, resulting in $ad, bc =0$ once more.
+
+Thus, for $n=2$, Player A can guarantee a win regardless of who starts.
+
+\keyword{Conjecture}
+These two smallest cases suggest a possibility that Player A may be able to guarantee a win for every $n$, regardless of the initial cell they choose. However, I do not yet have a mathematical argument that extends this beyond $n=2$. I will use Python to investigate whether this pattern continues for higher $n$.
+
+\section*{Investigating this in Python}
+
+I wanted to extend these arguments to larger matrices, but quickly realised that simply generating completed matrices and calculating their determinants would not be enough. This would tell me which final positioning matrices are winning and loosing, but not whether I could force the game to end at one of them as Player A.
+
+\keyword{STUCK} My first difficulty was deciding how to represent an unfinished matrix. I could not use $0$ to represent an empty cell, because $0$ is also a number that I actually need to be able to place in the cells in game. These two situations must be distinguishable.
+
+\keyword{AHA} I initially considered keeping separate records of which cells were occupied and which contained ones. However, I realised that I could represent an empty cell using Python's \texttt{None} instead. This means that a cell containing zero, a cell containing one, and an empty cell are all represented differently. I used a list of lists, with each inner list representing a row. For example,
+
+$$
+\begin{pmatrix}
+0&1\\
+?&0
+\end{pmatrix}
+$$
+
+
+is represented by:
+
+$$\text{board = [[0, 1], [None, 0]]}$$
+
+
+I next needed a way to calculate the determinant of a completed matrix. Rather than writing a separate formula for each matrix size, I used cofactor expansion along the first row:
+
+$$
+\det(A)=\sum_{j=1}^{n}(-1)^{1+j}a_{1j}\det(A_{1j}),
+$$
+
+where $A_{1j}$ is the minor matrix obtained by deleting the first row and the $j$-th column.
+
+For example, when $n=3$,
+
+$$
+\det(A)=a(ei-fh)-b(di-fg)+c(dh-eg),
+$$
+
+where
+
+$$
+A=\begin{pmatrix}
+a&b&c\\
+d&e&f\\
+g&h&i
+\end{pmatrix}.
+$$
+
+I applied this through the use of my recursive function \texttt{determinant(A)}.
+
+\subsection*{Introducing recursive reasoning}
+
+The next problem was to account for the fact that both players are choosing their moves strategically. I initially thought about investigating every possible completed matrix, but this would not distinguish between a position that I could deliberately achieve and one that only occurs if Player B makes a mistake. I ultimated decided it was not worth/needed to investigated unstrategic cases first as I had with my previous assignment.
+
+\keyword{AHA} I realised that I needed to investigate the game one move at a time, considering every possible choice by each player. This led me to introduce a second recursive function, \texttt{can\_win(board, my\_turn)}.
+
+Letting $W(P)$ notate whether Player A can guarantee a zero determinant from the current position $P$ given optimal gameplay. If it is currently my turn, I only need to find one move that leaves me in a winning position to be in $W(P)$. However, if it is Player B's turn, every possible response must still allow me to win, since my opponent will choose the move least favourable to me: That is, we can't allow Player B to be in a position where they can make what is a winning move to them, as given optimal gameplay they will choose that move which ensures Player A will loose.
+
+Writing $M(P)$ for the set of positions obtainable from $P$ in one legal move, this gives
+
+
+$$
+W(P)=
+\begin{cases}
+\displaystyle\bigvee_{Q\in M(P)}W(Q),
+&\text{Player A's turn},\\[8pt]
+\displaystyle\bigwedge_{Q\in M(P)}W(Q),
+&\text{Player B's turn}.
+\end{cases}
+$$
+
+Here, $\bigvee$ means that at least one resulting position must be winning (as we only need one choice of winning position as Player A, as we're playing optimally and thus will pick such a choice) whilst $\bigwedge$ means that every resulting position must be winning.
+
+When the board is full, the recursion terminates as there's no more moves to be played and checks the determinant directly to find who has won:
+
+$$
+W(P)=
+\begin{cases}
+\text{True},&\det(A)=0,\\
+\text{False},&\det(A)\neq 0.
+\end{cases}
+$$
+
+In my Python code, \texttt{can\_win} works by temporarily placing a $0$ (or $1$) in each unoccupied \texttt{None} cell, calling itself again with the turn changed, and then undoing the placement and reverting the cell back to \texttt{None}. Restoring the cell back to being empty, I found, is important: otherwise, the next possible move would be investigated on a board that already contains the previous temporary move.
+
+I also wrote \texttt{board\_full(board)} to check whether the game has ended, and \texttt{create\_board(n)} to generate an empty matrix of any size. These allow the same functions to be used for different values of $n$.
+
+\subsection*{Initial computational results}
+
+I first tested the recursive solver for $n=1,2,3$. The results agreed with my by-hand calculations for the first two cases, and showed that Player A could also guarantee a win for $n=3$.
+
+For $n=3$, there are
+
+$$
+\binom{9}{4}=126
+$$
+
+possible completed matrices, since Player A places five $0$s and Player B places four $1$s. My determinant calculations found that 90 of these matrices were singular, while 36 had non-zero determinants.
+
+\keyword{PAUSE} Although this means that singular matrices are somewhat common, it doesn't actually establish whether I can force one to occur and force a win. Player B is not choosing a completed matrix at random; they are actively trying to prevent me from winning. This is why I found the recursive solver to be MUCH more useful than simply counting the number of singular matrices, which ultimately barely gives us any informaiton.
+
+The function \texttt{can\_win} shows that Player A can guarantee a win for $n=3$. I then extended the investigation using \texttt{find\_winning\_move(board)}, which returns a move that preserves a guaranteed win, and \texttt{find\_all\_winning\_moves(board)}, which checks every possible opening move.
+
+This showed that all nine possible opening moves are winning for $n=3$. I also wrote \texttt{print\_strategy} to display a strategy tree: it chooses a winning move for Player A and then explores every possible response from Player B. This allowed me to see how the strategy develops, rather than only receiving a True or False result-- it provided much more informaiton. As expected, all branches of the tree end in Player A winning. 
+
+\subsection*{Extending to higher values of $n$}
+
+Having found that all opening positions are winning for $n=3$-- and having incidentally found similar for $n=1,2$ during my initial by-hand explorations-- I initially considered checking every possible starting position for larger matrices as well.
+
+However, whilst \keyword{AHA} waiting for the code to run, I realised that there is an evident mathematical reason why all opening positions are viable. Any cell $(i,j)$ can be transformed into any other cell $(k,l)$ by permuting the rows and columns. Swapping two rows or columns changes the sign of the determinant, but does not change whether it is $0$ as it is signless. These permutations also preserve the rules of the game, since every empty cell remains a possible move for either player.
+
+ and thus a strategy beginning \keyword{Therefore} at one cell can be transformed into an equivalent strategy beginning at any other cell. So I only need to investigate one opening position for each matrix size. If a winning strategy exists after opening at $(0,0)$, it must exist after any other opening move too.
+
+This reduces the number of starting positions I need to test, although it does not remove the difficulty of exploring all subsequent moves, especially as the $n$ value climbs. In particular, \texttt{print\_strategy} becomes increasingly impractical, because it attempts to display every possible response by Player B-- this is why I terminated my attempt to have it run for $n=4$ and $n=5$
+
+For larger values of $n$, I will therefore use \texttt{can\_win} to test whether a winning strategy exists, rather than printing the entire strategy tree. I will increase $n$ while the computation remains feasible and compare the results. At this stage, I do not want to assume that the pattern observed for $n=1,2,3$ necessarily holds for every positive integer.
+
+The results for $n=4$ and $n=5$ also demonsrate that Player A can guarantee a win, provided they make the first move. Since I have already established that all opening cells are equivalent by symmetry, testing the opening move at $(0,0)$ is sufficient. This extends the pattern I observed for $n=1,2,3$, although I cannot yet conclude that it holds for every $n$.
+
+
+\section*{Review}
+
+I have found that the recursive approach was much more useful than simply counting singular matrices, as it allowed me to investigate whether Player A could actually force a win against an optimal opponent. However, my investigation was still limited by the efficiency of my code.
+
+\keyword{Reflect} One inefficiency was that \texttt{can\_win} repeatedly investigates possible game states without storing results from previous calculations. Different sequences of moves can lead to the same board, meaning that I may end up solving the same problem multiple times.
+
+The number of possible moves decreases only gradually as the board fills, so the number of possible game sequences grows extremely quickly with $n$. This made investigating $n=5$ computationally demanding and prevented me from exploring larger matrices. I could improve this by using trying to investigate using a more efficient determinant algorithm than recursive cofactor expansion, or being more efficient in approaching Player B's potential moves-- giving them a strategy, too, instead of just exhaustively checking all potential moves they could make.
+
+\keyword{Conjecture} My results suggest that investigating whether Player A can force a win for every value of $n$ is worthwhile, but naturally only testing up to $n=5$ is no where near sufficient to establish this. If I continued, I would try to prove this using mathematical induction. I would need to establish a base case and, with the assumption that winning strategy really does exist for any matrix size, investigate whether this could be used to construct one for the next size. Finding such a relationship would allow me to move beyond computational evidence towards a general proof.
+
+I would also investigate how changing the assumptions affects the outcome. If Player B moved first, I suspect the results could differ, particularly for odd $n$ of which Player B would then get an extra move compared to Player A. I would need to test this rather than assume that the strategies I found still apply, as the fact that Player B is placing $1$s, a 'less volitile' number compared to $0$ regarding determinant calculating.
+
+\keyword{Extend} A more substantial change would be allowing both players to place either $0$ or $1$, instead of being restricted to just one. Player B-- i.e the player that moves second-- could potentially guarantee a win by picking two columns and mirroring each of Player A's moves in the corresponding position of the paired column. This would eventually produce two identical columns, forcing the determinant to be zero.
+
+I could also investigate what happens when I allow players to overwrite previously occupied cells: this would make the game immensely harder to model, since moves would no longer simply fill the board: a player could repeatedly alter the matrix, making the number of possible game states and the strategic analysis much more complicated. I may instead investigate if Players got a limit on how many overiding moves they were granted, or how many times a single cell can be overidden.
+
+Overall, I found that recursive reasoning provided me with a way to investigate how the game unfurls with optimised playing, but it also exposed the limitations of relying on computation alone.
+
+\section*{Code}
+
+The Python code for this investigation can be found on my GitHub page:\\
+\url{https://github.com/andymoston05-design/Problem-Solving-with-Python-Assignment-4}
+\end{document}
